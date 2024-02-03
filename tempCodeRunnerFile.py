@@ -1,3 +1,5 @@
-parent_element = chrome_driver.find_element(
-#     #    CSSセレクタを記述
-#     By.CSS_SELECTOR, '[name="email"]')
+# メール送信（直接書き込む）
+# input_field = chrome_driver.find_element(
+#     By.XPATH,
+#     '//*[@id="email"]')
+# input_field.send_keys("cobo94251@gmail.com")

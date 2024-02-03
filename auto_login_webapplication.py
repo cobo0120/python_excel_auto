@@ -9,6 +9,7 @@ import time
 import os
 import pandas as pd
 import glob
+from selenium.webdriver.support.ui import Select
 # 別のプログラム上でタイマー設定で起動（exeファイルを設定し起動）朝の9時に読み進める
 # エクセルを見にいく（python）どこのエクセルを見にいくのか難しいため、あらかじめディレクトリ指定するか。exeファイルを作成するか。
 
@@ -28,6 +29,7 @@ import glob
 # # # すべてのデータフレームを一つに結合
 # combined_df = pd.concat(all_dfs, ignore_index=True)
 # print(combined_df)
+
 
 # chromeブラウザ起動オプションを指定
 chrome_options = webdriver.ChromeOptions()
@@ -112,24 +114,167 @@ sheet_obj = wb_obj.active
 
 # 2.再発注用のフラグが立っているもの（B列）を参照する
 # （本来であればフラグを立っているものは全て申請するが今回は4行目のみ）
-# B列の4行目のセルを取得
-cell_obj = sheet_obj.cell(row=4, column=2)
+# D列の4行目のセルを取得(商品名)
+cell_obj_item = sheet_obj.cell(row=4, column=4)
 # セルの値を出力
-print(cell_obj.value)
+print(cell_obj_item.value)
+
+# F列の4行目のセルを取得(単価)
+cell_obj_price = sheet_obj.cell(row=4, column=6)
+# セルの値を出力
+print(cell_obj_price.value)
+
+# I列の4行目のセルを取得(数量)
+cell_obj_quit = sheet_obj.cell(row=4, column=9)
+# セルの値を出力
+print(cell_obj_quit.value)
+
 
 # 3.アクセス後４行目をWEB申請画面の新規申請に入力できるように設計する
-# （エクセルを参照して入力する動きを見たいので少しの設定で１行入力で）
-# 新しいデータを別の入力欄に入力
-# 例えば、E列の4行目に入力する場合
-sheet_obj.cell(row=4, column=5).value = cell_obj.value  # E列は5番目の列なのでcolumn=5
+# （エクセルを参照して入力する動きを見たい）
+# エクセルから取得した2のデータをWEB申請システムの入力欄に入力
+# 指定されたXPathに一致する入力欄を見つけてデータを入力
+
+# 購入先
+input_field = chrome_driver.find_element(
+    By.XPATH,
+    '//*[@id="app"]/main/div[1]/form/div[5]/input')
+input_field.send_keys('前回同様')  # ここに入力したいデータを指定
+
+# 購入先URL
+input_field = chrome_driver.find_element(
+    By.XPATH,
+    '//*[@id="app"]/main/div[1]/form/div[6]/input')
+input_field.send_keys('前回同様')  # ここに入力したいデータを指定
+
+# 利用目的
+input_field = chrome_driver.find_element(
+    By.XPATH,
+    '//*[@id="app"]/main/div[1]/form/div[7]/textarea')
+input_field.send_keys('前回同様')  # ここに入力したいデータを指定
+
+# 納品希望日
+input_field = chrome_driver.find_element(
+    By.XPATH,
+    '//*[@id="app"]/main/div[1]/form/div[8]/input')
+input_field.send_keys('0020240130')  # ここに入力したいデータを指定
+
+# セレクトの場合の基本的な記述の仕方（区分）
+select_field = chrome_driver.find_element(
+    By.XPATH,
+    '//*[@id="item_table"]/tbody/tr/td[1]/select')
+select = Select(select_field)
+print(select.options)
+select.select_by_value("3")
 
 
+# 商品名
+input_field = chrome_driver.find_element(
+    By.XPATH,
+    '//*[@id="item_table"]/tbody/tr/td[2]/input')
+input_field.send_keys(cell_obj_item.value)  # ここに入力したいデータを指定
+
+# 購入単価
+input_field = chrome_driver.find_element(
+    By.XPATH,
+    '//*[@id="item_table"]/tbody/tr/td[3]/input')
+input_field.send_keys(cell_obj_price.value)  # ここに入力したいデータを指定
+
+
+# 数量
+input_field = chrome_driver.find_element(
+    By.XPATH,
+    '//*[@id="item_table"]/tbody/tr/td[4]/input')
+input_field.send_keys(cell_obj_quit.value)
+
+# セレクトの場合の基本的な記述の仕方（区分）
+select_field = chrome_driver.find_element(
+    By.XPATH,
+    '//*[@id="item_table"]/tbody/tr/td[1]/select')
+select = Select(select_field)
+print(select.options)
+select.select_by_value("3")
+
+
+# 単位
+input_field = chrome_driver.find_element(
+    By.XPATH,
+    '//*[@id="item_table"]/tbody/tr/td[5]/input')
+input_field.send_keys("式")
+
+# セレクトの場合の基本的な記述の仕方（勘定科目）
+select_field = chrome_driver.find_element(
+    By.XPATH,
+    '//*[@id="item_table"]/tbody/tr/td[6]/select')
+select = Select(select_field)
+print(select.options)
+select.select_by_value("3")
+
+# スクロールを実行（例: 500ピクセル下にスクロール）
+chrome_driver.execute_script("window.scrollBy(0, 1500);")
+
+time.sleep(10)
+# メール送信操作（ボタン）
+# ボタンを選択
+button = chrome_driver.find_element(
+    By.XPATH, '//*[@id="app"]/main/div[1]/form/button[1]')
+
+# ボタンをクリック
+button.click()
+
+time.sleep(3)
+
+# ベージボタンを選択
+button = chrome_driver.find_element(
+    By.XPATH, '//*[@id="page-nate"]/button[3]')
+
+# ボタンをクリック
+button.click()
+
+time.sleep(3)
+
+# 送信先ボタンを選択
+button = chrome_driver.find_element(
+    By.XPATH, '//*[@id="destination_body"]/tr[2]/td[5]/button')
+
+# ボタンをクリック
+button.click()
+
+time.sleep(3)
+
+
+# # メール送信（直接書き込む）
+# input_field = chrome_driver.find_element(
+#     By.XPATH,
+#     '//*[@id="email"]')
+# input_field.send_keys("cobo94251@gmail.com")
+
+
+# 備考
+input_field = chrome_driver.find_element(
+    By.XPATH,
+    '//*[@id="app"]/main/div[1]/form/div[15]/textarea')
+input_field.send_keys("定量発注")
+
+time.sleep(3)
+# スクロールを実行（例: 500ピクセル下にスクロール）
+chrome_driver.execute_script("window.scrollBy(0, 1500);")
+
+
+time.sleep(5)
 # 4.承認ボタンを押し、承認する動作まで進める（申請できないが今回はそれで）
 # 指定されたXPathに一致するボタンを見つけてクリック
-button1 = driver.find_element_by_xpath(
+button1 = chrome_driver.find_element(
+    By.XPATH,
     '//*[@id="app"]/main/div[1]/form/button[2]')
 button1.click()
 
-button2 = driver.find_element_by_xpath(
+time.sleep(5)
+
+button2 = chrome_driver.find_element(
+    By.XPATH,
     '//*[@id="exampleModal"]/div/div/div[3]/button[1]')
 button2.click()
+
+
+time.sleep(10)
