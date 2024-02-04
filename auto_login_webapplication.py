@@ -10,6 +10,8 @@ import os
 import pandas as pd
 import glob
 from selenium.webdriver.support.ui import Select
+from openpyxl import load_workbook
+from datetime import datetime, timedelta
 # 別のプログラム上でタイマー設定で起動（exeファイルを設定し起動）朝の9時に読み進める
 # エクセルを見にいく（python）どこのエクセルを見にいくのか難しいため、あらかじめディレクトリ指定するか。exeファイルを作成するか。
 
@@ -77,204 +79,225 @@ form_login_button = wait.until(
 
 form_login_button.click()
 
+# エクセルを立ち上げる
+filepath = path = "/Users/kouheitakahashi/excel_auto/在庫管理表/在庫リスト.xlsx"
 
-# 実際に処理待つ
-time.sleep(5)
+# Excelファイルを開く
+wb = load_workbook(filename=filepath, data_only=True)
 
+# 最初のシートを選択
+sheet_obj = wb.active
 
-# ログイン後、要素が読み込まれるまで待つ
-# wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'nav > img ')))
+# B列の各セルをチェック
+print(sheet_obj.max_row)
+for row in range(4, sheet_obj.max_row + 1):
+    print("welcome2")
+    cell = sheet_obj['B{}'.format(row)]
+    print(cell.value)
+    # フラグが立っている場合は申請を行う
+    if cell.value == 1 and sheet_obj['B13'].value != "申請済":
+        # 実際に処理待つ
+        time.sleep(5)
 
+        # ログイン後、要素が読み込まれるまで待つ
+        # wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'nav > img ')))
 
-# 申請メニュー画面上の操作
-# 備品・消耗品購入申請画面のリンクを見つける
-link = chrome_driver.find_element(
-    By.XPATH, '//*[@id="app"]/main/div[1]/div/div[1]/div/a/h5')
+        # 申請メニュー画面上の操作
+        # 備品・消耗品購入申請画面のリンクを見つける
+        link = chrome_driver.find_element(
+            By.XPATH, '//*[@id="app"]/main/div[1]/div/div[1]/div/a/h5')
 
+        # リンクをクリックする
+        link.click()
 
-# リンクをクリックする
-link.click()
+        time.sleep(15)
+        # 1/18レッスンはここまで
+        # 新規申請まで表示できた
 
-time.sleep(10)
-# 1/18レッスンはここまで
-# 新規申請まで表示できた
+        # 1/27のレッスンで実現したいこと
+        # 承認画面のボタン操作までの流れを実装
+        # # openpyexlを使っていく
+        # １.指定フォルダ内にある在庫管理表にアクセス
 
+        # Excelファイルへのパスを指定
+        # path = "/Users/kouheitakahashi/excel_auto/在庫管理表/在庫リスト.xlsx"
+        # # ワークブックとアクティブなシートを開く
+        # wb_obj = openpyxl.load_workbook(path)
+        # sheet_obj = wb_obj.active
 
-# 1/27のレッスンで実現したいこと
-# 承認画面のボタン操作までの流れを実装
-# # openpyexlを使っていく
-# １.指定フォルダ内にある在庫管理表にアクセス
+        # 2.再発注用のフラグが立っているもの（B列）を参照する
+        # （本来であればフラグを立っているものは全て申請するが今回は4行目のみ）
+        # D列の4行目のセルを取得(商品名)
+        cell_obj_item = sheet_obj.cell(row=row, column=4)
+        # セルの値を出力
+        print(cell_obj_item.value)
 
-# Excelファイルへのパスを指定
-path = "/Users/kouheitakahashi/excel_auto/在庫管理表/在庫リスト.xlsx"
-# ワークブックとアクティブなシートを開く
-wb_obj = openpyxl.load_workbook(path)
-sheet_obj = wb_obj.active
+        # F列の4行目からのセルを取得(単価)
+        cell_obj_price = sheet_obj.cell(row=row, column=6)
+        # セルの値を出力
+        print(cell_obj_price.value)
 
+        # I列の4行目からのセルを取得(数量)
+        cell_obj_quit = sheet_obj.cell(row=row, column=9)
+        # セルの値を出力
+        print(cell_obj_quit.value)
 
-# 2.再発注用のフラグが立っているもの（B列）を参照する
-# （本来であればフラグを立っているものは全て申請するが今回は4行目のみ）
-# D列の4行目のセルを取得(商品名)
-cell_obj_item = sheet_obj.cell(row=4, column=4)
-# セルの値を出力
-print(cell_obj_item.value)
+        # M列の4行目からのセルを取得(購入区分)
+        cell_obj_purchase = sheet_obj.cell(row=row, column=13)
+        # セルの値を出力
+        print(cell_obj_purchase.value)
 
-# F列の4行目のセルを取得(単価)
-cell_obj_price = sheet_obj.cell(row=4, column=6)
-# セルの値を出力
-print(cell_obj_price.value)
+        # N列の4行目からのセルを取得(勘定科目)
+        cell_obj_account = sheet_obj.cell(row=row, column=14)
+        # セルの値を出力
+        print(cell_obj_account.value)
 
-# I列の4行目のセルを取得(数量)
-cell_obj_quit = sheet_obj.cell(row=4, column=9)
-# セルの値を出力
-print(cell_obj_quit.value)
+        # 3.アクセス後４行目をWEB申請画面の新規申請に入力できるように設計する
+        # （エクセルを参照して入力する動きを見たい）
+        # エクセルから取得した2のデータをWEB申請システムの入力欄に入力
+        # 指定されたXPathに一致する入力欄を見つけてデータを入力
 
+        # 購入先
+        input_field = chrome_driver.find_element(
+            By.XPATH,
+            '//*[@id="app"]/main/div[1]/form/div[5]/input')
+        input_field.send_keys('前回同様')  # ここに入力したいデータを指定
 
-# 3.アクセス後４行目をWEB申請画面の新規申請に入力できるように設計する
-# （エクセルを参照して入力する動きを見たい）
-# エクセルから取得した2のデータをWEB申請システムの入力欄に入力
-# 指定されたXPathに一致する入力欄を見つけてデータを入力
+        # 購入先URL
+        input_field = chrome_driver.find_element(
+            By.XPATH,
+            '//*[@id="app"]/main/div[1]/form/div[6]/input')
+        input_field.send_keys('前回同様')  # ここに入力したいデータを指定
 
-# 購入先
-input_field = chrome_driver.find_element(
-    By.XPATH,
-    '//*[@id="app"]/main/div[1]/form/div[5]/input')
-input_field.send_keys('前回同様')  # ここに入力したいデータを指定
+        # 利用目的
+        input_field = chrome_driver.find_element(
+            By.XPATH,
+            '//*[@id="app"]/main/div[1]/form/div[7]/textarea')
+        input_field.send_keys('前回同様')  # ここに入力したいデータを指定
 
-# 購入先URL
-input_field = chrome_driver.find_element(
-    By.XPATH,
-    '//*[@id="app"]/main/div[1]/form/div[6]/input')
-input_field.send_keys('前回同様')  # ここに入力したいデータを指定
+        # 納品希望日
+        current_date = datetime.now()
+        one_week_later = current_date + timedelta(weeks=1)
 
-# 利用目的
-input_field = chrome_driver.find_element(
-    By.XPATH,
-    '//*[@id="app"]/main/div[1]/form/div[7]/textarea')
-input_field.send_keys('前回同様')  # ここに入力したいデータを指定
+        input_field = chrome_driver.find_element(
+            By.XPATH,
+            '//*[@id="app"]/main/div[1]/form/div[8]/input')
+        input_field.send_keys(
+            one_week_later.strftime('00%Y%m%d'))  # ここに入力したいデータを指定
 
-# 納品希望日
-input_field = chrome_driver.find_element(
-    By.XPATH,
-    '//*[@id="app"]/main/div[1]/form/div[8]/input')
-input_field.send_keys('0020240130')  # ここに入力したいデータを指定
+        # セレクトの場合の基本的な記述の仕方（区分）
+        select_field = chrome_driver.find_element(
+            By.XPATH,
+            '//*[@id="item_table"]/tbody/tr/td[1]/select')
+        select = Select(select_field)
+        print(select.options)
+        select.select_by_value(cell_obj_purchase.value)
 
-# セレクトの場合の基本的な記述の仕方（区分）
-select_field = chrome_driver.find_element(
-    By.XPATH,
-    '//*[@id="item_table"]/tbody/tr/td[1]/select')
-select = Select(select_field)
-print(select.options)
-select.select_by_value("3")
+        # 商品名
+        input_field = chrome_driver.find_element(
+            By.XPATH,
+            '//*[@id="item_table"]/tbody/tr/td[2]/input')
+        input_field.send_keys(cell_obj_item.value)  # ここに入力したいデータを指定
 
+        # 購入単価
+        input_field = chrome_driver.find_element(
+            By.XPATH,
+            '//*[@id="item_table"]/tbody/tr/td[3]/input')
+        input_field.send_keys(cell_obj_price.value)  # ここに入力したいデータを指定
 
-# 商品名
-input_field = chrome_driver.find_element(
-    By.XPATH,
-    '//*[@id="item_table"]/tbody/tr/td[2]/input')
-input_field.send_keys(cell_obj_item.value)  # ここに入力したいデータを指定
+        # 数量
+        input_field = chrome_driver.find_element(
+            By.XPATH,
+            '//*[@id="item_table"]/tbody/tr/td[4]/input')
+        input_field.send_keys(cell_obj_quit.value)
 
-# 購入単価
-input_field = chrome_driver.find_element(
-    By.XPATH,
-    '//*[@id="item_table"]/tbody/tr/td[3]/input')
-input_field.send_keys(cell_obj_price.value)  # ここに入力したいデータを指定
+        # 単位
+        input_field = chrome_driver.find_element(
+            By.XPATH,
+            '//*[@id="item_table"]/tbody/tr/td[5]/input')
+        input_field.send_keys("式")
 
+        # セレクトの場合の基本的な記述の仕方（勘定科目）
+        select_field = chrome_driver.find_element(
+            By.XPATH,
+            '//*[@id="item_table"]/tbody/tr/td[6]/select')
+        select = Select(select_field)
+        print(select.options)
+        select.select_by_value(cell_obj_account.value)
 
-# 数量
-input_field = chrome_driver.find_element(
-    By.XPATH,
-    '//*[@id="item_table"]/tbody/tr/td[4]/input')
-input_field.send_keys(cell_obj_quit.value)
+        # スクロールを実行（例: 500ピクセル下にスクロール）
+        chrome_driver.execute_script("window.scrollBy(0, 1500);")
 
-# セレクトの場合の基本的な記述の仕方（区分）
-select_field = chrome_driver.find_element(
-    By.XPATH,
-    '//*[@id="item_table"]/tbody/tr/td[1]/select')
-select = Select(select_field)
-print(select.options)
-select.select_by_value("3")
+        time.sleep(15)
+        # メール送信操作（ボタン）
+        # ボタンを選択
+        button = chrome_driver.find_element(
+            By.XPATH, '//*[@id="app"]/main/div[1]/form/button[1]')
 
+        # ボタンをクリック
+        button.click()
 
-# 単位
-input_field = chrome_driver.find_element(
-    By.XPATH,
-    '//*[@id="item_table"]/tbody/tr/td[5]/input')
-input_field.send_keys("式")
+        time.sleep(3)
 
-# セレクトの場合の基本的な記述の仕方（勘定科目）
-select_field = chrome_driver.find_element(
-    By.XPATH,
-    '//*[@id="item_table"]/tbody/tr/td[6]/select')
-select = Select(select_field)
-print(select.options)
-select.select_by_value("3")
+        # ベージボタンを選択
+        button = chrome_driver.find_element(
+            By.XPATH, '//*[@id="page-nate"]/button[3]')
 
-# スクロールを実行（例: 500ピクセル下にスクロール）
-chrome_driver.execute_script("window.scrollBy(0, 1500);")
+        # ボタンをクリック
+        button.click()
 
-time.sleep(10)
-# メール送信操作（ボタン）
-# ボタンを選択
-button = chrome_driver.find_element(
-    By.XPATH, '//*[@id="app"]/main/div[1]/form/button[1]')
+        time.sleep(3)
 
-# ボタンをクリック
-button.click()
+        # 送信先ボタンを選択
+        button = chrome_driver.find_element(
+            By.XPATH, '//*[@id="destination_body"]/tr[2]/td[5]/button')
 
-time.sleep(3)
+        # ボタンをクリック
+        button.click()
 
-# ベージボタンを選択
-button = chrome_driver.find_element(
-    By.XPATH, '//*[@id="page-nate"]/button[3]')
+        time.sleep(3)
 
-# ボタンをクリック
-button.click()
+        # # メール送信（直接書き込む）
+        # input_field = chrome_driver.find_element(
+        #     By.XPATH,
+        #     '//*[@id="email"]')
+        # input_field.send_keys("cobo94251@gmail.com")
 
-time.sleep(3)
+        # 備考
+        input_field = chrome_driver.find_element(
+            By.XPATH,
+            '//*[@id="app"]/main/div[1]/form/div[15]/textarea')
+        input_field.send_keys("定量発注")
 
-# 送信先ボタンを選択
-button = chrome_driver.find_element(
-    By.XPATH, '//*[@id="destination_body"]/tr[2]/td[5]/button')
+        time.sleep(3)
+        # スクロールを実行（例: 500ピクセル下にスクロール）
+        chrome_driver.execute_script("window.scrollBy(0, 1500);")
 
-# ボタンをクリック
-button.click()
+        time.sleep(5)
+        # 4.承認ボタンを押し、承認する動作まで進める（申請できないが今回はそれで）
+        # 指定されたXPathに一致するボタンを見つけてクリック
+        button1 = chrome_driver.find_element(
+            By.XPATH,
+            '//*[@id="app"]/main/div[1]/form/button[2]')
+        button1.click()
 
-time.sleep(3)
+        time.sleep(5)
 
+        button2 = chrome_driver.find_element(
+            By.XPATH,
+            '//*[@id="exampleModal"]/div/div/div[3]/button[1]')
+        button2.click()
 
-# # メール送信（直接書き込む）
-# input_field = chrome_driver.find_element(
-#     By.XPATH,
-#     '//*[@id="email"]')
-# input_field.send_keys("cobo94251@gmail.com")
+        time.sleep(10)
 
+        # # ブックを取得
+        # ブック変数 = openpyxl.Workbook(ファイル名)
+        # # シートを取得
+        # 最初のシートを選択
+        # sheet_obj = wb.active
+        # セルへ書き込む
+        # シート変数[セル記号] = 書き込む値
+        sheet_obj.cell(row=row, column=15).value = "申請済"
+        print(sheet_obj)
 
-# 備考
-input_field = chrome_driver.find_element(
-    By.XPATH,
-    '//*[@id="app"]/main/div[1]/form/div[15]/textarea')
-input_field.send_keys("定量発注")
-
-time.sleep(3)
-# スクロールを実行（例: 500ピクセル下にスクロール）
-chrome_driver.execute_script("window.scrollBy(0, 1500);")
-
-
-time.sleep(5)
-# 4.承認ボタンを押し、承認する動作まで進める（申請できないが今回はそれで）
-# 指定されたXPathに一致するボタンを見つけてクリック
-button1 = chrome_driver.find_element(
-    By.XPATH,
-    '//*[@id="app"]/main/div[1]/form/button[2]')
-button1.click()
-
-time.sleep(5)
-
-button2 = chrome_driver.find_element(
-    By.XPATH,
-    '//*[@id="exampleModal"]/div/div/div[3]/button[1]')
-button2.click()
-
-
-time.sleep(10)
+        wb.save("/Users/kouheitakahashi/excel_auto/在庫管理表/在庫リスト.xlsx")
