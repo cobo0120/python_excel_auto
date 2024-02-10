@@ -90,6 +90,7 @@ sheet_obj = wb.active
 
 # B列の各セルをチェック
 print(sheet_obj.max_row)
+shori = []
 for row in range(4, sheet_obj.max_row + 1):
     print("welcome2")
     cell = sheet_obj['B{}'.format(row)]
@@ -191,7 +192,7 @@ for row in range(4, sheet_obj.max_row + 1):
             '//*[@id="item_table"]/tbody/tr/td[1]/select')
         select = Select(select_field)
         print(select.options)
-        select.select_by_value(cell_obj_purchase.value)
+        select.select_by_value(str(cell_obj_purchase.value))
 
         # 商品名
         input_field = chrome_driver.find_element(
@@ -223,7 +224,7 @@ for row in range(4, sheet_obj.max_row + 1):
             '//*[@id="item_table"]/tbody/tr/td[6]/select')
         select = Select(select_field)
         print(select.options)
-        select.select_by_value(cell_obj_account.value)
+        select.select_by_value(str(cell_obj_account.value))
 
         # スクロールを実行（例: 500ピクセル下にスクロール）
         chrome_driver.execute_script("window.scrollBy(0, 1500);")
@@ -297,7 +298,21 @@ for row in range(4, sheet_obj.max_row + 1):
         # sheet_obj = wb.active
         # セルへ書き込む
         # シート変数[セル記号] = 書き込む値
-        sheet_obj.cell(row=row, column=15).value = "申請済"
-        print(sheet_obj)
+        # sheet_obj.cell(row=row, column=15).value = "申請済"
+        # print(sheet_obj)
+        shori.append(row)
 
-        wb.save("/Users/kouheitakahashi/excel_auto/在庫管理表/在庫リスト.xlsx")
+        # wb.save("/Users/kouheitakahashi/excel_auto/在庫管理表/在庫リスト.xlsx")
+wb.close()
+# Excelファイルを開く
+wb = load_workbook(filename=filepath)
+
+# 最初のシートを選択
+sheet_obj = wb.active
+
+for row2 in shori:
+    # シート変数[セル記号] = 書き込む値
+    sheet_obj.cell(row=row2, column=15).value = "申請済"
+    print(sheet_obj)
+
+wb.save("/Users/kouheitakahashi/excel_auto/在庫管理表/在庫リスト.xlsx")
